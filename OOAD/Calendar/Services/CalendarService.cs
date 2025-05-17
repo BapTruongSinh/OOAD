@@ -100,14 +100,28 @@ namespace Calendar.Services
                 var appointment = _dbContext.Appointments.Find(appointmentId);
                 if (appointment != null)
                 {
+                    // First, find and delete all reminders associated with this appointment
+                    var associatedReminders = _dbContext.Reminders.Where(r => r.AppointmentId == appointmentId).ToList();
+                    foreach (var reminder in associatedReminders)
+                    {
+                        _dbContext.Reminders.Remove(reminder);
+                    }
+                    
+                    // Then delete the appointment
                     _dbContext.Appointments.Remove(appointment);
                     _dbContext.SaveChanges();
                     return true;
                 }
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Log chi tiết lỗi
+                System.Diagnostics.Debug.WriteLine($"Error deleting appointment: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return false;
             }
         }
